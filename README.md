@@ -48,7 +48,7 @@ g++ -std=c++17 src/*.cpp -Iinclude -o scanner
 ```
 ## Usage
 ```bash
-./scanner /path/to/binary
+./scanner <binary_path>
 ```
 Reports each potential overflow call:
 ```bash
