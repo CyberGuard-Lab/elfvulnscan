@@ -49,7 +49,9 @@ int main(int argc, char* argv[]) {
                 std::cout << std::string(50, '-') << "\n";
                 
                 for (const auto& f : groupedFindings[riskGroup]) {
-                    std::cout << "   Function: " << f.funcName << "\n";
+                    if (!f.funcName.empty()) {
+                        std::cout << "   Function: " << f.funcName << "\n";
+                    }
                     std::cout << "   Address  : 0x" << f.instrAddr << "\n";
                     std::cout << "   Calls    : " << f.target << "\n";
                     std::cout << "   Analysis : " << f.detail << "\n\n";
@@ -67,7 +69,9 @@ int main(int argc, char* argv[]) {
         std::cout << "✓ No heap overflow vulnerabilities detected.\n";
     } else {
         for (const auto& h : heapFindings) {
-            std::cout << "   Potential heap overflow in '" << h.funcName << "':\n";
+            if (h.funcName != ".text") {
+                std::cout << "   Potential heap overflow in '" << h.funcName << "':\n";
+            }
             std::cout << "   Address: 0x" << h.instrAddr << "\n";
             std::cout << "   Detail : " << h.detail << "\n\n";
         }
@@ -82,7 +86,9 @@ int main(int argc, char* argv[]) {
         std::cout << "✓ No command injection vulnerabilities detected.\n";
     } else {
         for (const auto& c : cmdFindings) {
-            std::cout << "   Potential command injection in '" << c.funcName << "':\n";
+            if (c.funcName != ".text"){
+                std::cout << "   Potential command injection in '" << c.funcName << "':\n";
+            }
             std::cout << "   Address: 0x" << c.instrAddr << "\n";
             std::cout << "   Calls  : " << c.target << "\n";
             std::cout << "   Detail : " << c.detail << "\n\n";
