@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
         std::cout << "✓ No heap overflow vulnerabilities detected.\n";
     } else {
         for (const auto& h : heapFindings) {
-            if (h.funcName != ".text") {
+            if (h.funcName != "") {
                 std::cout << "   Potential heap overflow in '" << h.funcName << "':\n";
             }
             std::cout << "   Address: 0x" << h.instrAddr << "\n";
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
         std::cout << "✓ No command injection vulnerabilities detected.\n";
     } else {
         for (const auto& c : cmdFindings) {
-            if (c.funcName != ".text"){
+            if (c.funcName != ""){
                 std::cout << "   Potential command injection in '" << c.funcName << "':\n";
             }
             std::cout << "   Address: 0x" << c.instrAddr << "\n";
