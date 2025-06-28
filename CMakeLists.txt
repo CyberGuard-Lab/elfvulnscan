@@ -5,6 +5,8 @@ set(SOURCES
     src/main.cpp
     src/Disassembler.cpp
     src/Demangler.cpp
+    src/HeapOverflowDetector.cpp
+    src/CommandInjectionDetector.cpp
     src/UnsafeDetector.cpp
 )
 include_directories(include)
