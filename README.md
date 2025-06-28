@@ -1,37 +1,46 @@
 # automated-binary-vuln-scanner
 
-A simple modular binary vulnerability scanner for Linux that statically analyzes ELF binaries to detect potential buffer-overflow issues in both stack and heap contexts.
+A modular static vulnerability scanner for Linux ELF binaries. It analyzes binary instructions using `objdump` and identifies unsafe function calls, heap overflows, and potential command injections — all without executing the binary.
 
 ## Features
-- Disassembly of the `.text` section using `objdump`.
-- Demangling of C++ symbols via `c++filt`.
 
-- Stack-based overflow detection via `UnsafeDetector`:
-  - Flags unsafe calls (`gets`, `strcpy`, `sprintf`, etc.) and repeat-store loops (`rep movs`/`rep stos`).
-  - Reports:
-    - Function name
-    - Function start address
-    - Instruction address
-    - Unsafe call target
+### Stack-based Vulnerability Detection (`UnsafeDetector`)
+- Disassembles `.text` section and analyzes instructions.
+- Flags unsafe standard library calls:
+  - `gets`, `strcpy`, `sprintf`, `scanf`, etc.
+- Reports:
+  - Instruction address (full virtual address)
+  - Called function
+  - Risk level (HIGH / MEDIUM)
+  - Optional function name (if available via demangling)
 
-- Heap-based overflow detection via `HeapOverflowDetector`:
-    - Tracks dynamic allocations (`malloc`, `calloc`, `realloc`) and their sizes.
-    - Flags copy routines (`memcpy`, `memmove`, `strcpy`, `strncpy`) when the number of bytes copied exceeds the allocated buffer size.
-    - Detects unbounded `rep movsb`/`rep stosb` operations on heap buffers.
-    - Reports:
-      - Function name
-      - Instruction address of copy or repeat-store
-      - Exact bytes copied vs. allocation size and the allocation site address
+### Heap-based Overflow Detection (`HeapOverflowDetector`)
+- Tracks dynamic memory allocations (`malloc`, `calloc`)
+- Checks copying instructions (`memcpy`, `strcpy`, etc.) that may exceed allocated size
+- Detects `rep movsb` / `rep stosb` used on heap buffers
+- Reports:
+  - Instruction address
+  - Number of bytes copied vs. allocation size
+  - Allocation site address (if available)
+
+### Command Injection Detection (`CommandInjectionDetector`)
+- Identifies uses of:
+  - `system`, `popen`, and all `exec*` variants
+- Reports:
+  - Instruction address
+  - Target function (e.g., `system`)
+  - Risk detail
 
 ## Prerequisites
-- Linux (Ubuntu/Debian)
-- g++ (C++17 support)
-- binutils (provides `objdump` and `c++filt`)
-- cmake (if using CMake)
 
-## Build
+- Linux (tested on Ubuntu/Debian)
+- `g++` with C++17 support
+- `binutils` (provides `objdump` and `c++filt`)
+- `cmake` (optional but recommended)
 
-### CMake
+## Build Instructions
+
+### Option 1: Using CMake
 ```bash
 sudo apt update
 sudo apt install build-essential cmake binutils
@@ -42,36 +51,76 @@ mkdir build && cd build
 cmake ..
 make
 ```
-### Direct
+
+### Option 2: Manual Compile
 ```bash
 g++ -std=c++17 src/*.cpp -Iinclude -o scanner
 ```
+
 ## Usage
+
 ```bash
 ./scanner <binary_path>
 ```
-Reports each potential overflow call:
-```bash
-[!] Potential unsafe call (stack-based overflows) in 'main':
-    • Function start : 0x00000000004011EA
-    • Instr @        : 0x401279
-    • Calls unsafe   : call <strcpy@plt>
 
-[!] Potential heap-based buffer overflow in 'main':
-    • Instr @        : 0x401279
-    • Detail         : strcpy at 0x401279 copies 401080 bytes into buffer of size 8 allocated at 0x401270
+### Sample Output
+
+```
+Analyzing binary: ./bof_vuln
+Found 16 functions to analyze.
+
+============================================================
+ UNSAFE FUNCTION CALLS ANALYSIS
+============================================================
+
+[HIGH RISK] Found 1 issues:
+--------------------------------------------------
+   Address  : 0x0000000000401215
+   Calls    : gets
+   Analysis : Risk: HIGH - gets() doesn't check buffer bounds
+
+============================================================
+ HEAP OVERFLOW ANALYSIS
+============================================================
+✓ No heap overflow vulnerabilities detected.
+
+============================================================
+ COMMAND INJECTION ANALYSIS
+============================================================
+   Potential command injection:
+   Address: 0x0000000000401188
+   Calls  : system
+   Detail : Call to `system` at 0x0000000000401188 can lead to command injection risks.
+
+============================================================
+ SUMMARY
+============================================================
+Total issues found: 2
+├─ Unsafe function calls: 1
+├─ Heap overflows       : 0
+└─ Command injections   : 1
+
+Review flagged issues carefully — some may be false positives.
+Focus on HIGH risk findings first.
 ```
 
-Extending
+## Extending
 
-To add a new detector module:
+To add your own vulnerability detector:
 
-1. Create a new header/source pair under include/ and src/, following the pattern of UnsafeDetector or HeapOverflowDetector.
+1. Create a new pair of files: `include/MyDetector.h` and `src/MyDetector.cpp`
+2. Implement:
+   ```cpp
+   std::vector<MyDetector::Finding> detect(const std::vector<Function>& funcs) const;
+   ```
+3. Add your files to `CMakeLists.txt` or the `g++` compile command
+4. Include and invoke your detector from `src/main.cpp` and print results similar to existing modules
 
-2. Implement a detect(const std::vector<Function>&) method that returns a vector of findings.
+## Contributing
 
-3. Update CMakeLists.txt (or your build command) to compile the new files.
+Pull requests are welcome. You can contribute by:
 
-4. Include and invoke your detector in src/main.cpp, printing its findings similarly to existing modules.
-
-Feel free to submit pull requests for additional vulnerability checks or improvements!
+- Adding new detectors (e.g., format string, integer overflow)
+- Improving disassembly and instruction parsing
+- Enhancing reporting formats (e.g., JSON output, IDE integration)
+- Performance improvements
