@@ -3,6 +3,7 @@
 #include "Disassembler.h"
 #include "Demangler.h"
 #include "UnsafeDetector.h"
+#include "HeapOverflowDetector.h"
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -12,14 +13,26 @@ int main(int argc, char* argv[]) {
     std::string bin = argv[1];
     Disassembler dis;
     auto funcs = dis.parse(bin);
-    UnsafeDetector det;
-    auto findings = det.detect(funcs);
-    for (auto& f : findings) {
-        std::cout << "[!] Potential overflow in '" << f.funcName << "':\n";
+
+    // Detect unsafe calls (stack-based overflows)
+    UnsafeDetector unsafeDet;
+    auto unsafeFindings = unsafeDet.detect(funcs);
+    for (const auto& f : unsafeFindings) {
+        std::cout << "[!] Potential unsafe call (stack-based overflows) in '" << f.funcName << "':\n";
         std::cout << "    • Function start : 0x" << f.funcStart << "\n";
         std::cout << "    • Instr @        : 0x" << f.instrAddr << "\n";
         std::cout << "    • Calls unsafe   : " << f.mnemonic
                   << " <" << f.target << ">\n\n";
     }
+
+    // Detect heap-based overflows
+    HeapOverflowDetector heapDet;
+    auto heapFindings = heapDet.detect(funcs);
+    for (const auto& h : heapFindings) {
+        std::cout << "[!] Potential heap-based overflow in '" << h.funcName << "':\n";
+        std::cout << "    • Instr @        : 0x" << h.instrAddr << "\n";
+        std::cout << "    • Detail         : " << h.detail << "\n\n";
+    }
+
     return 0;
 }
