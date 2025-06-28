@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Found " << funcs.size() << " functions to analyze.\n";
 
     // Detect unsafe calls (stack-based overflows) with improved filtering
-    printSeparator("UNSAFE FUNCTION CALLS ANALYSIS");
+    printSeparator("BUFFER OVERFLOW ANALYSIS");
     UnsafeDetector unsafeDet;
     auto unsafeFindings = unsafeDet.detect(funcs);
     
