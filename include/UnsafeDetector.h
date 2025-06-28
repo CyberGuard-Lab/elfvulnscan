@@ -21,7 +21,13 @@ public:
 private:
     const std::vector<std::string> unsafeList = {
         "strcpy","strcat","sprintf","vsprintf",
-        "gets","scanf","memcpy","memmove"
+        "gets","scanf","memcpy","memmove",
+        "strncpy","strncat","snprintf","vsnprintf",
+        "sscanf","fscanf","fgets","getchar",
+        "getc","ungetc","puts","fputs",
+        "wcscpy","wcscat","wcsncat","wcsncpy",
+        "wmemcpy","wmemmove","swprintf","vswprintf",
+        "readlink","getwd","realpath","syslog"
     };
 };
 
