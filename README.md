@@ -52,14 +52,38 @@ g++ -std=c++17 src/*.cpp -Iinclude -o scanner
 ```
 Reports each potential overflow call:
 ```bash
-[!] Potential unsafe call (stack-based overflows) in 'main':
-    • Function start : 0x00000000004011EA
-    • Instr @        : 0x401279
-    • Calls unsafe   : call <strcpy@plt>
+Analyzing binary: binary/bof_vuln
+Found 16 functions to analyze.
+============================================================
+ BUFFER OVERFLOW ANALYSIS
+============================================================
+[HIGH RISK] Found 1 issues:
+--------------------------------------------------
+   Function: vuln()
+   Address  : 0x0x000000401215
+   Calls    : gets
+   Analysis : Risk: HIGH - gets() doesnt check buffer bounds
+============================================================ 
+ HEAP OVERFLOW ANALYSIS
+============================================================ 
+✓ No heap overflow vulnerabilities detected.
 
-[!] Potential heap-based buffer overflow in 'main':
-    • Instr @        : 0x401279
-    • Detail         : strcpy at 0x401279 copies 401080 bytes into buffer of size 8 allocated at 0x401270
+============================================================
+ COMMAND INJECTION ANALYSIS
+============================================================
+   Potential command injection in 'shell()':
+   Address: 0x0x000000401188
+   Calls  : system
+   Detail : Call to `system` at 0x000000401188 can lead to command injection risks.
+============================================================
+ SUMMARY
+============================================================
+Total issues found: 2
+├─ Unsafe function calls: 1
+├─ Heap overflows       : 0
+└─ Command injections   : 1
+Review flagged issues carefully - some may be false positives.
+   Focus on HIGH risk findings first.
 ```
 
 Extending
