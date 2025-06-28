@@ -54,8 +54,7 @@ vector<HeapOverflowDetector::Finding> HeapOverflowDetector::detect(const vector<
                             if (copySize > allocSize) {
                                 string detail = string(fn) + " at " + ins.address +
                                     " copies " + to_string(copySize) +
-                                    " bytes into buffer of size " + to_string(allocSize) +
-                                    " allocated at " + allocAddr;
+                                    " bytes into buffer of size " + to_string(allocSize);
                                 findings.push_back({ funcName, ins.address, detail });
                             }
                         }
