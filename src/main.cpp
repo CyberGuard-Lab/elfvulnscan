@@ -4,6 +4,7 @@
 #include "Demangler.h"
 #include "UnsafeDetector.h"
 #include "HeapOverflowDetector.h"
+#include "CommandInjectionDetector.h"
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -32,6 +33,17 @@ int main(int argc, char* argv[]) {
         std::cout << "[!] Potential heap-based overflow in '" << h.funcName << "':\n";
         std::cout << "    • Instr @        : 0x" << h.instrAddr << "\n";
         std::cout << "    • Detail         : " << h.detail << "\n\n";
+    }
+
+    // Detect command-injection risks
+    CommandInjectionDetector cmdDet;
+    auto cmdFindings = cmdDet.detect(funcs);
+    for (const auto& c : cmdFindings) {
+        std::cout << "[!] Potential command injection in '" 
+                  << c.funcName << "':\n";
+        std::cout << "    • Instr @        : 0x" << c.instrAddr << "\n";
+        std::cout << "    • Call to        : " << c.target << "\n";
+        std::cout << "    • Detail         : " << c.detail << "\n\n";
     }
 
     return 0;
