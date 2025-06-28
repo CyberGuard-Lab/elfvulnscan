@@ -1,3 +1,4 @@
+// gcc NULLPointerDereference.c  -o ../binary/NULLPointerDereference -fno-stack-protector -z execstack -no-pie
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>

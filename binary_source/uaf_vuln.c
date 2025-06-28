@@ -1,3 +1,4 @@
+// gcc uaf_vuln.c  -o ../binary/uaf_vuln -fno-stack-protector -z execstack -no-pie
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

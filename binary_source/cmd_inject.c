@@ -1,3 +1,4 @@
+// gcc cmd_inject.c  -o ../binary/cmd_inject -fno-stack-protector -z execstack -no-pie
 #include<stdio.h>
 
 int main() {

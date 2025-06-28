@@ -1,3 +1,4 @@
+// gcc uninitMem.c  -o ../binary/uninitMem_vuln -fno-stack-protector -z execstack -no-pie
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
