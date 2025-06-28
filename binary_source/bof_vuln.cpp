@@ -1,14 +1,13 @@
+// Compile with: g++ bof_vuln.cpp -o ../binary/bof_vuln -fno-stack-protector -z execstack -no-pie
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
 using namespace std;
 
-// Khai báo extern "C" để tên hàm không bị mangle
-extern "C" void shell() {
+void shell() {
     system("/bin/sh");
 }
 
-// Tự định nghĩa gets unsafe
 char* gets(char *buf) {
     int c;
     char *p = buf;
