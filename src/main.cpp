@@ -56,13 +56,31 @@ int main(int argc, char* argv[]) {
                     << groupedFindings[riskGroup].size() << " issues:\n";
                 oss << std::string(50, '-') << "\n";
 
+                std::map<std::string, std::vector<std::string>> groupedByFunc;
+                std::map<std::string, std::string> funcAnalysis;
+
                 for (const auto& f : groupedFindings[riskGroup]) {
-                    if (!f.funcName.empty())
-                        oss << "   Function: " << f.funcName << "\n";
-                    oss << "   Address  : 0x" << f.instrAddr << "\n";
-                    oss << "   Calls    : " << f.target << "\n";
-                    oss << "   Analysis : " << f.detail << "\n\n";
+                    std::string key = f.target + "|" + f.detail;
+                    groupedByFunc[key].push_back(f.instrAddr);
+                    funcAnalysis[key] = f.detail;
                 }
+
+                for (const auto& [key, addrs] : groupedByFunc) {
+                    auto delim = key.find('|');
+                    std::string funcName = key.substr(0, delim);
+                    std::string detail = funcAnalysis[key];
+
+                    std::cout << "   Calls    : " << funcName << "\n";
+                    std::cout << "   Risk     : " << riskGroup << "\n";
+                    std::cout << "   Analysis : " << detail << "\n";
+                    std::cout << "   Addresses: ";
+                    for (size_t i = 0; i < addrs.size(); ++i) {
+                        std::cout << "0x" << addrs[i];
+                        if (i + 1 != addrs.size()) std::cout << ", ";
+                    }
+                    std::cout << "\n\n";
+                }
+
             }
         }
     }
