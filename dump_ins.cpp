@@ -5,10 +5,12 @@
 #include <regex>
 #include <algorithm>
 #include <cstdio>
+#include <fstream>
 
 using namespace std;
 
-string normalizeAddress(string addr) {
+string normalizeAddress(string addr)
+{
     // Remove all "0x" prefixes
     while (addr.rfind("0x", 0) == 0 || addr.rfind("0X", 0) == 0)
         addr = addr.substr(2);
@@ -22,8 +24,10 @@ string normalizeAddress(string addr) {
     return addr;
 }
 
-int main(int argc, char* argv[]) {
-    if (argc < 3 || argc > 5) {
+int main(int argc, char *argv[])
+{
+    if (argc < 3 || argc > 5)
+    {
         cerr << "Usage:\n"
              << "  " << argv[0] << " <binary_path> <address> [lines_before] [lines_after]\n"
              << "  " << argv[0] << " <binary_path> <address> full\n";
@@ -37,24 +41,37 @@ int main(int argc, char* argv[]) {
     bool full_function = false;
     int lines_before = 10, lines_after = 10;
 
-    if (argc == 4 && string(argv[3]) == "full") {
+    if (argc == 4 && string(argv[3]) == "full")
+    {
         full_function = true;
-    } else if (argc == 5) {
+    }
+    else if (argc == 5)
+    {
         lines_before = stoi(argv[3]);
         lines_after = stoi(argv[4]);
     }
 
     // Run objdump
+    ifstream testFile(binary);
+    if (!testFile)
+    {
+        cerr << "Error: Cannot open binary file '" << binary << "'\n";
+        return 1;
+    }
+    testFile.close();
+
     string cmd = "objdump -d " + binary;
-    FILE* pipe = popen(cmd.c_str(), "r");
-    if (!pipe) {
+    FILE *pipe = popen(cmd.c_str(), "r");
+    if (!pipe)
+    {
         cerr << "Failed to run objdump on " << binary << endl;
         return 1;
     }
 
     vector<string> lines;
     char buffer[4096];
-    while (fgets(buffer, sizeof(buffer), pipe)) {
+    while (fgets(buffer, sizeof(buffer), pipe))
+    {
         lines.emplace_back(buffer);
     }
     pclose(pipe);
@@ -66,9 +83,11 @@ int main(int argc, char* argv[]) {
     int func_end = -1;
     int target_line = -1;
 
-    for (size_t i = 0; i < lines.size(); ++i) {
+    for (size_t i = 0; i < lines.size(); ++i)
+    {
         smatch match;
-        if (regex_search(lines[i], match, func_header_regex)) {
+        if (regex_search(lines[i], match, func_header_regex))
+        {
             if (func_start != -1 && target_line != -1 && func_end == -1)
                 func_end = i;
             func_start = i;
@@ -78,14 +97,18 @@ int main(int argc, char* argv[]) {
         // Search for line containing normalized address
         smatch addr_match;
         regex addr_regex("^\\s*" + target_addr + ":");
-        if (regex_search(lines[i], addr_match, addr_regex)) {
+        if (regex_search(lines[i], addr_match, addr_regex))
+        {
             target_line = i;
             cout << "Function: " << current_func << endl;
 
-            if (full_function) {
+            if (full_function)
+            {
                 // Find the next 'ret' instruction after target
-                for (size_t j = target_line; j < lines.size(); ++j) {
-                    if (lines[j].find("ret") != string::npos) {
+                for (size_t j = target_line; j < lines.size(); ++j)
+                {
+                    if (lines[j].find("ret") != string::npos)
+                    {
                         func_end = j + 1;
                         break;
                     }
@@ -96,7 +119,9 @@ int main(int argc, char* argv[]) {
                 for (int j = start; j < end; ++j)
                     cout << lines[j];
                 return 0;
-            } else {
+            }
+            else
+            {
                 int start = max(0, target_line - lines_before);
                 int end = min((int)lines.size(), target_line + lines_after + 1);
                 for (int j = start; j < end; ++j)
