@@ -2,3 +2,4 @@
 build/
 check_overflow.py
 .env
+scanner
