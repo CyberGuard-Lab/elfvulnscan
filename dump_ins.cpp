@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 using namespace std;
 
@@ -22,6 +25,67 @@ string normalizeAddress(string addr)
     transform(addr.begin(), addr.end(), addr.begin(), ::tolower);
 
     return addr;
+}
+
+vector<string> runObjdumpSafely(const string &binary)
+{
+    vector<string> lines;
+    regex safe("^[a-zA-Z0-9._/-]+$");
+    if (!regex_match(binary, safe))
+    {
+        cerr << "Invalid binary name.\n";
+        return lines;
+    }
+
+    ifstream testFile(binary);
+    if (!testFile)
+    {
+        cerr << "Error: Cannot open binary file '" << binary << "'\n";
+        return lines;
+    }
+    testFile.close();
+
+    int pipefd[2];
+    if (pipe(pipefd) == -1)
+    {
+        perror("pipe");
+        return lines;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0)
+    {
+        perror("fork");
+        return lines;
+    }
+
+    if (pid == 0)
+    {
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        dup2(pipefd[1], STDERR_FILENO);
+        close(pipefd[1]);
+
+        const char *argv[] = {"objdump", "-d", binary.c_str(), nullptr};
+        execvp("objdump", (char *const *)argv);
+        perror("execvp");
+        _exit(1);
+    }
+    else
+    {
+        close(pipefd[1]);
+        char buffer[4096];
+        FILE *readPipe = fdopen(pipefd[0], "r");
+        while (fgets(buffer, sizeof(buffer), readPipe))
+        {
+            lines.emplace_back(buffer);
+        }
+        fclose(readPipe);
+        int status;
+        waitpid(pid, &status, 0);
+    }
+
+    return lines;
 }
 
 int main(int argc, char *argv[])
@@ -52,30 +116,13 @@ int main(int argc, char *argv[])
     }
 
     // Run objdump
-    ifstream testFile(binary);
-    if (!testFile)
+    vector<string> lines = runObjdumpSafely(binary);
+    if (lines.empty())
     {
-        cerr << "Error: Cannot open binary file '" << binary << "'\n";
+        cerr << "Disassembly failed or binary invalid.\n";
         return 1;
     }
-    testFile.close();
-
-    string cmd = "objdump -d " + binary;
-    FILE *pipe = popen(cmd.c_str(), "r");
-    if (!pipe)
-    {
-        cerr << "Failed to run objdump on " << binary << endl;
-        return 1;
-    }
-
-    vector<string> lines;
-    char buffer[4096];
-    while (fgets(buffer, sizeof(buffer), pipe))
-    {
-        lines.emplace_back(buffer);
-    }
-    pclose(pipe);
-
+    
     // Find the target line and containing function
     regex func_header_regex("^\\s*([0-9a-f]+)\\s+<([^>]+)>:");
     string current_func = "UNKNOWN";
